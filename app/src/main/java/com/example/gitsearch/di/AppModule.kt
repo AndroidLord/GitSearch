@@ -49,5 +49,11 @@ object AppModule {
         database: GitSearchDatabase
     ) = database.gitSearchDao()
 
+    @Provides
+    @Singleton
+    fun provideContext(
+        @ApplicationContext context: Context
+    ) = context
+
 
 }

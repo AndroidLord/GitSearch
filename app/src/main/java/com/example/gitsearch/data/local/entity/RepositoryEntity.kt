@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class RepositoryEntity(
     @PrimaryKey val id: Long,
     val name: String,
+    val query: String,
     val fullName: String,
     val description: String?,
     val stargazersCount: Int,

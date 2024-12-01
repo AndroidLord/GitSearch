@@ -10,13 +10,16 @@ import com.example.gitsearch.data.local.entity.RepositoryEntity
 @Dao
 interface GitSearchDao {
 
+    @Query("SELECT * FROM repositoryentity WHERE query = :query")
+    fun getGitRepoSearchPagingSource(query: String): PagingSource<Int, RepositoryEntity>
+
+    @Query("DELETE FROM repositoryentity WHERE query = :query")
+    suspend fun clearQueryData(query: String)
+
     @Upsert
     suspend fun upsertRepository(repositories: List<RepositoryEntity>)
 
-    @Query("SELECT * FROM repositoryentity")
-    fun getGitRepoSearchPagingSource(): PagingSource<Int, RepositoryEntity>
-
-    @Query("DELETE FROM repositoryentity")
-    suspend fun clearAll()
+    @Query("SELECT EXISTS(SELECT 1 FROM repositoryentity WHERE query = :query)")
+    suspend fun isQueryInDb(query: String): Boolean
 
 }

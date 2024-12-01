@@ -13,8 +13,8 @@ interface GithubApiService {
     @GET("search/repositories")
     suspend fun searchRepositories(
         @Query("q") query: String,
-        @Query("page") page: Long,
-        @Query("per_page") perPage: Long = 10
+        @Query("page") page: Int,
+        @Query("per_page") perPage: Int
     ): RepoSearchResponseDTO
 
     @GET("repos/{owner}/{repo}")

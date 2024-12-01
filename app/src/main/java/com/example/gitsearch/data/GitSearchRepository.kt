@@ -1,5 +1,6 @@
 package com.example.gitsearch.data
 
+import android.content.Context
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -8,6 +9,7 @@ import com.example.gitsearch.data.local.GitSearchDao
 import com.example.gitsearch.data.local.entity.RepositoryEntity
 import com.example.gitsearch.data.remote.RepositoryRemoteMediatorFactory
 import com.example.gitsearch.data.remote.api.GithubApiService
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -16,6 +18,7 @@ import javax.inject.Inject
 @OptIn(ExperimentalPagingApi::class)
 class GitSearchRepository @Inject constructor(
     private val gitRepoMediator: RepositoryRemoteMediatorFactory,
+    private val context: Context,
     private val gitSearchDao: GitSearchDao,
     private val githubApiService: GithubApiService
 ) {
@@ -25,11 +28,12 @@ class GitSearchRepository @Inject constructor(
             config = PagingConfig(
                 pageSize = 10,
                 enablePlaceholders = false,
-                initialLoadSize = 20
+                initialLoadSize = 10,
+                prefetchDistance = 1
             ),
-            remoteMediator = gitRepoMediator.create(query),
+            remoteMediator = gitRepoMediator.create(query, context),
             pagingSourceFactory = {
-                gitSearchDao.getGitRepoSearchPagingSource()
+                gitSearchDao.getGitRepoSearchPagingSource(query)
             }
         ).flow
     }

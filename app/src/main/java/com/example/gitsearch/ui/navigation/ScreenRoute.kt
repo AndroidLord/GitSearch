@@ -8,5 +8,8 @@ sealed class ScreenRoute {
     data object Home : ScreenRoute()
 
     @Serializable
-    data class Detail(val repoId: Long) : ScreenRoute()
+    data class Detail(val owner: String, val repo: String) : ScreenRoute()
+
+    @Serializable
+    data class WebView(val url: String) : ScreenRoute()
 }

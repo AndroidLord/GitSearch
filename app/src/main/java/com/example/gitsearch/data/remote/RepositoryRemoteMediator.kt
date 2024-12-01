@@ -2,19 +2,23 @@
 
 package com.example.gitsearch.data.remote
 
+import android.content.Context
+import android.util.Log
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
+import com.example.gitsearch.core.NetworkUtils
 import com.example.gitsearch.data.local.GitSearchDatabase
 import com.example.gitsearch.data.local.entity.RepositoryEntity
 import com.example.gitsearch.data.mappers.toRepositoryEntity
 import com.example.gitsearch.data.remote.api.GithubApiService
-import okio.IOException
 import retrofit2.HttpException
+import java.io.IOException
 
 class RepositoryRemoteMediator(
+    private val context: Context,
     private val gitDb: GitSearchDatabase,
     private val repoApi: GithubApiService,
     private val query: String,
@@ -26,32 +30,46 @@ class RepositoryRemoteMediator(
     ): MediatorResult {
         return try {
 
-            val loadKey = when (loadType) {
-                LoadType.REFRESH -> 1
-                LoadType.PREPEND -> {
-                    return MediatorResult.Success(endOfPaginationReached = true)
-                }
+            val isOnline = NetworkUtils.isNetworkAvailable(context)
 
-                LoadType.APPEND -> {
-                    val lastItem = state.lastItemOrNull()
-                        ?: return MediatorResult.Success(endOfPaginationReached = true)
-                    lastItem.id
-                }
+            if (!isOnline && loadType == LoadType.REFRESH && gitDb.gitSearchDao().isQueryInDb(query)) {
+                // Skip fetching and use cached data
+                return MediatorResult.Success(endOfPaginationReached = false)
             }
 
-            val gitRepository = repoApi.searchRepositories(query, loadKey)
+            val loadKey = when (loadType) {
+                LoadType.REFRESH -> 1
+                LoadType.APPEND -> {
+                    val lastItem = state.pages.lastOrNull()?.data?.lastOrNull()
+                    if (lastItem == null) {
+                        1
+                    } else {
+                        // Calculate the next page number
+                        state.pages.size + 1
+                    }
+                }
+
+                else -> return MediatorResult.Success(endOfPaginationReached = true)
+            }
+
+            val gitRepository = repoApi.searchRepositories(
+                query = query,
+                page = loadKey,
+                perPage = state.config.pageSize
+            )
 
             gitDb.withTransaction {
                 if (loadType == LoadType.REFRESH) {
-                    gitDb.gitSearchDao().clearAll()
+                    gitDb.gitSearchDao().clearQueryData(query)
                 }
                 val gitRepositoryEntity = gitRepository.repositories.map {
-                    it.toRepositoryEntity()
+                    it.toRepositoryEntity(query)
                 }
                 gitDb.gitSearchDao().upsertRepository(gitRepositoryEntity)
             }
+            val isEndOfPagination = gitRepository.repositories.isEmpty()
+            MediatorResult.Success(endOfPaginationReached = isEndOfPagination)
 
-            MediatorResult.Success(endOfPaginationReached = gitRepository.repositories.isEmpty())
 
         } catch (e: IOException) {
             MediatorResult.Error(e)

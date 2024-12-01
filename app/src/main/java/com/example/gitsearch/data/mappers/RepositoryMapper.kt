@@ -12,10 +12,11 @@ fun OwnerDTO.toOwnerEntity(): OwnerEntity {
     )
 }
 
-fun RepositoryDTO.toRepositoryEntity(): RepositoryEntity {
+fun RepositoryDTO.toRepositoryEntity(query: String): RepositoryEntity {
     return RepositoryEntity(
         id = id,
         name = name,
+        query = query.lowercase(),
         fullName = fullName,
         description = description,
         stargazersCount = stargazersCount,

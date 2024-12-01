@@ -1,5 +1,6 @@
 package com.example.gitsearch.ui.screen.home
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,6 +39,7 @@ import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.gitsearch.core.NetworkUtils
 import com.example.gitsearch.data.local.entity.RepositoryEntity
 import com.example.gitsearch.ui.navigation.ScreenRoute
 
@@ -45,8 +49,13 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     navController: NavHostController
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery = viewModel.searchQuery.collectAsStateWithLifecycle()
+
+    val isNetworkAvailable = remember {
+        NetworkUtils.isNetworkAvailable(context)
+    }
 
     Scaffold(
         topBar = {
@@ -63,8 +72,17 @@ fun HomeScreen(
             searchQuery = searchQuery.value,
             onQueryChanged = viewModel::onQueryChanged,
             onSearchClick = viewModel::onSearchQueryClick,
-            onGitRepoClick = { id ->
-                navController.navigate(ScreenRoute.Detail(repoId = id))
+            onGitRepoClick = { owner: String, repo: String ->
+                if (!isNetworkAvailable) {
+                   Toast.makeText(context, "No network available", Toast.LENGTH_SHORT).show()
+                    return@HomeContent
+                }
+                navController.navigate(
+                    ScreenRoute.Detail(
+                        owner = owner,
+                        repo = repo
+                    )
+                )
             }
         )
     }
@@ -78,7 +96,7 @@ private fun HomeContent(
     searchQuery: String,
     onQueryChanged: (String) -> Unit,
     onSearchClick: () -> Unit,
-    onGitRepoClick: (id: Long) -> Unit
+    onGitRepoClick: (owner: String, repo: String) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -162,8 +180,11 @@ private fun SearchBar(
 @Composable
 private fun PagingList(
     gitSearchRepo: LazyPagingItems<RepositoryEntity>,
-    onGitRepoClick: (id: Long) -> Unit
+    onGitRepoClick: (owner: String, repo: String) -> Unit
 ) {
+
+    val context = LocalContext.current
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (val refreshState = gitSearchRepo.loadState.refresh) {
             is LoadState.Loading -> {
@@ -213,13 +234,13 @@ private fun PagingList(
 @Composable
 fun RepoItem(
     repo: RepositoryEntity,
-    onGitRepoClick: (id: Long) -> Unit
+    onGitRepoClick: (owner: String, repo: String) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { onGitRepoClick(repo.id) },
+            .clickable { onGitRepoClick(repo.owner.username, repo.name) },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
