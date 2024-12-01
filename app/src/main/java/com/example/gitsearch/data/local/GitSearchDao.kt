@@ -1,5 +1,6 @@
 package com.example.gitsearch.data.local
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
@@ -10,12 +11,12 @@ import com.example.gitsearch.data.local.entity.RepositoryEntity
 interface GitSearchDao {
 
     @Upsert
-    suspend fun upsertRepository(repository: RepositoryEntity)
-
-    @Delete
-    suspend fun deleteRepository(repository: RepositoryEntity)
+    suspend fun upsertRepository(repositories: List<RepositoryEntity>)
 
     @Query("SELECT * FROM repositoryentity")
-    suspend fun getRepositories(): List<RepositoryEntity>
+    fun getGitRepoSearchPagingSource(): PagingSource<Int, RepositoryEntity>
+
+    @Query("DELETE FROM repositoryentity")
+    suspend fun clearAll()
 
 }

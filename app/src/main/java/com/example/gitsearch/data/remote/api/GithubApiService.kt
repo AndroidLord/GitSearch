@@ -12,24 +12,32 @@ interface GithubApiService {
 
     @GET("search/repositories")
     suspend fun searchRepositories(
-        @Query("q") query: String
+        @Query("q") query: String,
+        @Query("page") page: Long,
+        @Query("per_page") perPage: Long = 10
     ): RepoSearchResponseDTO
 
     @GET("repos/{owner}/{repo}")
     suspend fun getRepositoryDetails(
         @Path("owner") owner: String,
-        @Path("repo") repo: String
+        @Path("repo") repo: String,
+        @Query("page") page: Long,
+        @Query("per_page") perPage: Long = 10
     ): RepositoryDetailsDTO
 
     @GET("repos/{owner}/{repo}/contributors")
     suspend fun getContributors(
         @Path("owner") owner: String,
-        @Path("repo") repo: String
+        @Path("repo") repo: String,
+        @Query("page") page: Long,
+        @Query("per_page") perPage: Long = 10
     ): List<ContributorDTO>
 
     @GET("users/{username}/repos")
     suspend fun getUserRepositories(
-        @Path("username") username: String
+        @Path("username") username: String,
+        @Query("page") page: Long,
+        @Query("per_page") perPage: Long = 10
     ): List<RepositoryDTO>
 
 }

@@ -49,4 +49,5 @@ object AppModule {
         database: GitSearchDatabase
     ) = database.gitSearchDao()
 
+
 }
